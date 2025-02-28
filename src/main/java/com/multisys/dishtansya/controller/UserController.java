@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Controller
 public class UserController {
 
@@ -47,20 +50,26 @@ public class UserController {
 
     @PostMapping("/login")
     @Operation(description = "login user")
-    public ResponseEntity<String> loginUser(@ModelAttribute RegisterReq req) throws Exception {
+    public ResponseEntity<Map<String, String>> loginUser(@ModelAttribute RegisterReq req) throws Exception {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
             );
         } catch (Exception e) {
-            throw new Exception("Incorrect email or password", e);
+            Map<String, String> res = new HashMap<>();
+            res.put("message", "Invalid credentials");
+
+            return new ResponseEntity<>(res, HttpStatus.CREATED);
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(req.getEmail());
 
         final String jwt = jwtUtil.generateToken(userDetails);
 
-        return new ResponseEntity<>(jwt, HttpStatus.CREATED);
+        Map<String, String> res = new HashMap<>();
+        res.put("access_token", jwt);
+
+        return new ResponseEntity<>(res, HttpStatus.CREATED);
 
     }
 }
